@@ -793,6 +793,6 @@ if __name__ == '__main__':
     
             time.sleep(3)
 
-            # logconf_1.stop()
+            logconf_1.stop()
             logconf_2.stop()
 

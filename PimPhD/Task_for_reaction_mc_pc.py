@@ -14,7 +14,7 @@ uri = 'radio://0/80/2M/E7E7E7E701'
 
 start_x = float(0.0)  # initial pos_X of the drone; unit: m
 start_y = float(0.0)  # initial pos_y of the drone; unit: m
-take_off_vel = 0.3    # take off velocity; unit: m/s
+take_off_vel = 1    # take off velocity; unit: m/s
 
 f = open("conditions.txt", "rt")
 data = f.read()
@@ -122,6 +122,30 @@ def drone_move_pc(scf): # default take-off height = 0.3 m
         ## Delay 1 sec before landing
         time.sleep(1)
 
+def accelerate_test(scf):
+    with PositionHlCommander(
+        scf,
+        x=start_x, y=start_y, z=0.0,
+        default_velocity=take_off_vel,
+        default_height=1.0,
+        controller=PositionHlCommander.CONTROLLER_PID) as pc:
+
+        time.sleep(1)
+
+        pc.up(0.5, velocity=take_off_vel)
+        # time.sleep((0.5)/take_off_vel)
+        print(pc.get_position())
+
+        # pc.forward(0.5, velocity=take_off_vel)
+        # # time.sleep((0.5)/take_off_vel)
+        # print(pc.get_position())
+
+        # pc.right(0.5, velocity=take_off_vel)
+        # # time.sleep((0.5)/take_off_vel)
+        # print(pc.get_position())
+
+        time.sleep(1)
+
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
 
@@ -135,5 +159,6 @@ if __name__ == '__main__':
  
         # Perform the movement
         # drone_move_mc(scf)
-        drone_move_pc(scf)
+        # drone_move_pc(scf)
+        accelerate_test(scf)
 
