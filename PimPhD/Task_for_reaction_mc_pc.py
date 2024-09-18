@@ -2,20 +2,30 @@ import time
 import logging
 import cflib.crtp
 import math
+import csv
 
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.crazyflie.log import LogConfig
 from cflib.positioning.motion_commander import MotionCommander
 from cflib.positioning.position_hl_commander import PositionHlCommander
 
 
 # URI to the Crazyflie to connect to
-uri = 'radio://0/80/2M/E7E7E7E701'
+uri = 'radio://0/80/2M/E7E7E7E703'
+
+take_off_vel = 1      # take off velocity; unit: m/s
+task_vel = 1.2
+offset = 0.15         # drone height offset; unit: m
+tar_h = 1.5             # target height
+ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
+de_h = tar_h - offset + ball_length # default height; unit: m
 
 start_x = float(0.0)  # initial pos_X of the drone; unit: m
 start_y = float(0.0)  # initial pos_y of the drone; unit: m
-take_off_vel = 1    # take off velocity; unit: m/s
+start_z = float(offset)  # initial pos_z of the drone; unit: m
 
+'''
 f = open("conditions.txt", "rt")
 data = f.read()
 
@@ -28,11 +38,42 @@ fly_out_y = float(data_split[4]) # Fly out position in y-axis (unit: m)
 fly_out_z = float(data_split[5]) # Fly out position in z-axis (unit: m)
 
 dist = math.sqrt(fly_out_x*fly_out_x + fly_out_y*fly_out_y + fly_out_z*fly_out_z)
+'''
+
+position_estimate_1 = [0, 0, 0]  # Drone's pos
+
+# CSV file setup
+filename = "wt_ball_h15_v12_uw04_3.csv"
+# filename = "test.csv"
+fields = ['timestamp', 'pos_x', 'pos_y', 'pos_z']
+
+# Write header if the file does not exist
+try:
+    with open(filename, 'x', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(fields)
+except FileExistsError:
+    pass
+
+
+# # Positioning Callback Section
+def log_pos_callback_1(uri, timestamp, data, logconf_1):
+    global position_estimate_1
+    position_estimate_1[0] = data['kalman.stateX']
+    position_estimate_1[1] = data['kalman.stateY']
+    position_estimate_1[2] = data['kalman.stateZ']
+    print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]))
+
+    # Append to CSV file if both estimates are available
+    with open(filename, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([timestamp, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]])
+     
 
 # # # Crazyflie Motion (using MotionCommander)
 # drone stand's height: 0.15 m; ball and stick: 0.08 m (count from drone's legs)
 
-
+'''
 def drone_move_mc(scf): # default take-off height = 0.3 m
     
     t_init = time.time()
@@ -85,7 +126,7 @@ def drone_move_pc(scf): # default take-off height = 0.3 m
 
     with PositionHlCommander(
         scf,
-        x=start_x, y=start_y, z=0.0,
+        x=start_x, y=start_y, z=start_z,
         default_velocity=take_off_vel,
         default_height=0.3,
         controller=PositionHlCommander.CONTROLLER_PID) as pc:
@@ -121,30 +162,32 @@ def drone_move_pc(scf): # default take-off height = 0.3 m
         
         ## Delay 1 sec before landing
         time.sleep(1)
+'''
+
 
 def accelerate_test(scf):
     with PositionHlCommander(
         scf,
-        x=start_x, y=start_y, z=0.0,
+        x=start_x, y=start_y, z=start_z,
         default_velocity=take_off_vel,
-        default_height=1.0,
+        default_height=de_h,
         controller=PositionHlCommander.CONTROLLER_PID) as pc:
 
-        time.sleep(1)
+        time.sleep(3)
 
-        pc.up(0.5, velocity=take_off_vel)
-        # time.sleep((0.5)/take_off_vel)
-        print(pc.get_position())
-
-        # pc.forward(0.5, velocity=take_off_vel)
-        # # time.sleep((0.5)/take_off_vel)
+        # pc.forward(1, velocity=task_vel)
+        # time.sleep((0.6)/take_off_vel)
         # print(pc.get_position())
 
-        # pc.right(0.5, velocity=take_off_vel)
-        # # time.sleep((0.5)/take_off_vel)
+        # pc.right(1, velocity=task_vel)
+        # # time.sleep((0.7)/take_off_vel)
         # print(pc.get_position())
 
-        time.sleep(1)
+        pc.up(0.4, velocity=task_vel)
+        # # time.sleep((0.4)/take_off_vel)
+        # print(pc.get_position())
+
+        time.sleep(3)
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -154,11 +197,27 @@ if __name__ == '__main__':
 
     # # initializing Crazyflie 
     cflib.crtp.init_drivers(enable_debug_driver=False)
-    
+
     with SyncCrazyflie(uri, cf=Crazyflie(rw_cache='./cache')) as scf:
- 
-        # Perform the movement
+        logconf_1 = LogConfig(name='Position', period_in_ms=500)
+        logconf_1.add_variable('kalman.stateX', 'float')
+        logconf_1.add_variable('kalman.stateY', 'float')
+        logconf_1.add_variable('kalman.stateZ', 'float')        
+        scf.cf.log.add_config(logconf_1)
+        logconf_1.data_received_cb.add_callback( lambda timestamp, data, logconf_1: log_pos_callback_1(uri, timestamp, data, logconf_1) )
+
+        logconf_1.start()
+
+        time.sleep(3)
+
+        # # Perform the movement
         # drone_move_mc(scf)
         # drone_move_pc(scf)
         accelerate_test(scf)
+        
+        time.sleep(3)
+
+        logconf_1.stop()
+
+
 

@@ -13,30 +13,50 @@ from threading import Lock
 
 
 # URI to the Crazyflie to connect to
-uri_1 = 'radio://0/80/2M/E7E7E7E701' # Drone's uri
-uri_2 = 'radio://0/80/2M/E7E7E7E7E9' # Tag's uri
+uri_1 = 'radio://0/80/2M/E7E7E7E708' # Drone's uri
+uri_2 = 'radio://0/80/2M/E7E7E7E7E7' # Tag's uri
 
-start_x = float(1.0)  # initial pos_X of the drone; unit: m
-start_y = float(0.0)  # initial pos_y of the drone; unit: m   #Left: 0.0; Right: -0.4
-init_Vel = 0.3  # initial velocity
+# start_x = float(1.0)  # initial pos_X of the drone; unit: m
+# start_y = float(0.0)  # initial pos_y of the drone; unit: m   #Left: 0.0; Right: -0.4
+# init_Vel = 0.3  # initial velocity
+
+
+take_off_vel = 1      # take off velocity; unit: m/s
+task_vel = 1
+offset = 0.15         # drone height offset; unit: m
+tar_h = 1.2             # target height
+ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
+de_h = tar_h # default height; unit: m
+
+start_x = float(0.0)  # initial pos_X of the drone; unit: m
+start_y = float(0.0)  # initial pos_y of the drone; unit: m
+start_z = float(offset)  # initial pos_z of the drone; unit: m
+
+
 
 # f = open("conditions.txt", "rt")
 # data = f.read()
 
 # Read configuration from file
-with open("conditions.txt", "rt") as f:
-    data = f.read()
+# with open("conditions.txt", "rt") as f:
+#     data = f.read()
  
-data_split = data.split()
-h0 = float(data_split[0]) # Eyes level height (unit: meter)
-T_fly_out = float(data_split[1]) # Fly out time (unit: sec)
-V_fly_out = float(data_split[2]) # Fly out velocity (unit: m/s)
-fly_out_x = float(data_split[3]) # Fly out position in x-axis (unit: m) 
-fly_out_y = float(data_split[4]) # Fly out position in y-axis (unit: m)
-fly_out_z = float(data_split[5]) # Fly out position in z-axis (unit: m)
+# data_split = data.split()
+# h0 = float(data_split[0]) # Eyes level height (unit: meter)
+# T_fly_out = float(data_split[1]) # Fly out time (unit: sec)
+# V_fly_out = float(data_split[2]) # Fly out velocity (unit: m/s)
+# fly_out_x = float(data_split[3]) # Fly out position in x-axis (unit: m) 
+# fly_out_y = float(data_split[4]) # Fly out position in y-axis (unit: m)
+# fly_out_z = float(data_split[5]) # Fly out position in z-axis (unit: m)
 
-offset = float(0.37)  # offset for the initial take off height; unit: m
-init_H = h0 - offset  # Initial drone's height; unit: m
+# offset = float(0.37)  # offset for the initial take off height; unit: m
+# init_H = h0 - offset  # Initial drone's height; unit: m
+
+
+
+
+
+
 
 
 position_estimate_1 = [0, 0, 0]  # Drone's pos
@@ -44,7 +64,7 @@ position_estimate_2 = [0, 0, 0]  # LS's pos
 
 
 # CSV file setup
-filename = "record.csv"
+filename = "FW2.csv"
 fields = ['timestamp', 'pos1_x', 'pos1_y', 'pos1_z', 'pos2_x', 'pos2_y', 'pos2_z']
 lock = Lock()
 
@@ -86,6 +106,7 @@ def log_pos_callback_2(uri_2, timestamp, data, logconf_2):
 
 # # # Crazyflie Motion (using MotionCommander)
 
+'''
 def drone_move_pc(scf1): # default take-off height = 0.3 m
     
     t_init = time.time()
@@ -139,7 +160,32 @@ def drone_move_pc(scf1): # default take-off height = 0.3 m
         ## Delay 0.5 sec before landing
         time.sleep(0.5)
 
-    
+'''
+
+
+def accelerate_test(scf):
+    with PositionHlCommander(
+        scf_1,
+        x=start_x, y=start_y, z=start_z,
+        default_velocity=take_off_vel,
+        default_height=de_h,
+        controller=PositionHlCommander.CONTROLLER_PID) as pc:
+
+        time.sleep(3)
+
+        pc.forward(1, velocity=task_vel)
+        # time.sleep((0.6)/take_off_vel)
+        # print(pc.get_position())
+
+        # pc.right(1, velocity=task_vel)
+        # # time.sleep((0.7)/take_off_vel)
+        # print(pc.get_position())
+
+        # pc.up(0.4, velocity=task_vel)
+        # # time.sleep((0.4)/take_off_vel)
+        # print(pc.get_position())
+
+        time.sleep(5)
 
 if __name__ == '__main__':
 
@@ -168,7 +214,8 @@ if __name__ == '__main__':
             time.sleep(3)
 
             # Perform the catching task
-            drone_move_pc(scf_1)
+            # drone_move_pc(scf_1)
+            accelerate_test(scf_1)
 
             time.sleep(3)
 
