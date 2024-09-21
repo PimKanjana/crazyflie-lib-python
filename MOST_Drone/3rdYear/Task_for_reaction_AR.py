@@ -1,9 +1,9 @@
 import time
 import cflib.crtp
 import winsound
-import cv2
+import threading
 import csv
-
+import math
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 from cflib.positioning.position_hl_commander import PositionHlCommander
@@ -14,58 +14,55 @@ from threading import Lock
 
 # URI to the Crazyflie to connect to
 uri_1 = 'radio://0/80/2M/E7E7E7E708' # Drone's uri
-uri_2 = 'radio://0/80/2M/E7E7E7E7E7' # Tag's uri
+uri_2 = 'radio://0/80/2M/E7E7E7E7E8' # Tag's uri
 
-# start_x = float(1.0)  # initial pos_X of the drone; unit: m
-# start_y = float(0.0)  # initial pos_y of the drone; unit: m   #Left: 0.0; Right: -0.4
-# init_Vel = 0.3  # initial velocity
-
-
-take_off_vel = 1      # take off velocity; unit: m/s
-task_vel = 1
-offset = 0.15         # drone height offset; unit: m
-tar_h = 1.2             # target height
-ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
-de_h = tar_h # default height; unit: m
 
 start_x = float(0.0)  # initial pos_X of the drone; unit: m
 start_y = float(0.0)  # initial pos_y of the drone; unit: m
-start_z = float(offset)  # initial pos_z of the drone; unit: m
+start_z = float(0.0)  # initial pos_z of the drone; unit: m
+
+# start_x = float(1.0)  # initial pos_X of the drone; unit: m
+# start_y = float(0.0)  # initial pos_y of the drone; unit: m   #Left: 0.0; Right: -0.4
+init_Vel = float(0.5)  # initial velocity
 
 
-
-# f = open("conditions.txt", "rt")
-# data = f.read()
-
-# Read configuration from file
-# with open("conditions.txt", "rt") as f:
-#     data = f.read()
- 
-# data_split = data.split()
-# h0 = float(data_split[0]) # Eyes level height (unit: meter)
-# T_fly_out = float(data_split[1]) # Fly out time (unit: sec)
-# V_fly_out = float(data_split[2]) # Fly out velocity (unit: m/s)
-# fly_out_x = float(data_split[3]) # Fly out position in x-axis (unit: m) 
-# fly_out_y = float(data_split[4]) # Fly out position in y-axis (unit: m)
-# fly_out_z = float(data_split[5]) # Fly out position in z-axis (unit: m)
-
-# offset = float(0.37)  # offset for the initial take off height; unit: m
-# init_H = h0 - offset  # Initial drone's height; unit: m
+# take_off_vel = 1      # take off velocity; unit: m/s
+# task_vel = 1
+# offset = 0.15         # drone height offset; unit: m
+# tar_h = 1.2             # target height
+# ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
+# de_h = tar_h          # default height; unit: m
 
 
+h0 = 1.4 # Eyes level height (unit: meter)
+T_fly_out = float(2) # Fly out time (unit: sec)
+V_fly_out = float(1) # Fly out velocity (unit: m/s)
 
-
-
-
+fly_out_x = float(0.8) # Fly out position in x-axis (unit: m); 0.8
+fly_out_y = float(0) # Fly out position in y-axis (unit: m); -0.8
+fly_out_z = float(0) # Fly out position in z-axis (unit: m); 0.4
 
 
 position_estimate_1 = [0, 0, 0]  # Drone's pos
 position_estimate_2 = [0, 0, 0]  # LS's pos
 
+d_th = float(0.2)   # threshold
+
+# # 1: FW; 2: RW; 3: UW
+# direct = ['0', '0', '0', '0', '0']
+# dir1 = ['1', '2','1', '3', '2']
+# dir2 = [3,1,1,2,3]
+# dir3 = [2,3,1,3,2]
+
+# direct = dir1
 
 # CSV file setup
-filename = "FW2.csv"
+filename = "S1_FW1.csv"
 fields = ['timestamp', 'pos1_x', 'pos1_y', 'pos1_z', 'pos2_x', 'pos2_y', 'pos2_z']
+
+proximity_filename = "proximity_log.csv"
+proximity_fields = ['timestamp', 'distance']
+
 lock = Lock()
 
 # Write header if the file does not exist
@@ -76,6 +73,12 @@ try:
 except FileExistsError:
     pass
 
+try:
+    with open(proximity_filename, 'x', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(proximity_fields)
+except FileExistsError:
+    pass
 
 # # Positioning Callback Section
 def log_pos_callback_1(uri_1, timestamp, data, logconf_1):
@@ -83,55 +86,62 @@ def log_pos_callback_1(uri_1, timestamp, data, logconf_1):
     position_estimate_1[0] = data['kalman.stateX']
     position_estimate_1[1] = data['kalman.stateY']
     position_estimate_1[2] = data['kalman.stateZ']
-    print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri_1, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]))
+    # print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri_1, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]))
 
     # Append to CSV file if both estimates are available
     with lock, open(filename, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow([timestamp, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2], position_estimate_2[0], position_estimate_2[1], position_estimate_2[2]])
-                                            
+
+    check_proximity(timestamp)                                        
+
 
 def log_pos_callback_2(uri_2, timestamp, data, logconf_2):
     global position_estimate_2
     position_estimate_2[0] = data['kalman.stateX']
     position_estimate_2[1] = data['kalman.stateY']
     position_estimate_2[2] = data['kalman.stateZ']
-    print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri_2, position_estimate_2[0], position_estimate_2[1], position_estimate_2[2]))
+    # print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri_2, position_estimate_2[0], position_estimate_2[1], position_estimate_2[2]))
 
-    # Append to CSV file if both estimates are available
-    with lock, open(filename, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow([timestamp, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2], position_estimate_2[0], position_estimate_2[1], position_estimate_2[2]])
+    # # Append to CSV file if both estimates are available
+    # with lock, open(filename, 'a', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow([timestamp, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2], position_estimate_2[0], position_estimate_2[1], position_estimate_2[2]])
                  
 
-# # # Crazyflie Motion (using MotionCommander)
+def check_proximity(timestamp):
+    global position_estimate_1, position_estimate_2
+    # Calculate the Euclidean distance
+    distance = math.sqrt(
+        (position_estimate_1[0] - position_estimate_2[0]) ** 2 +
+        (position_estimate_1[1] - position_estimate_2[1]) ** 2 +
+        (position_estimate_1[2] - position_estimate_2[2]) ** 2)
 
-'''
-def drone_move_pc(scf1): # default take-off height = 0.3 m
-    
-    t_init = time.time()
+    # If within the threshold, log it to the proximity CSV
+    if distance < d_th:
+        # winsound.PlaySound('Success.wav', winsound.SND_FILENAME)
+        # print("good job")   
+        with lock, open(proximity_filename, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([timestamp, distance])
+
+def drone_move_pc(scf1, event2): # default take-off height = 0.3 m
 
     # BEEP before start
-    print("Task Begin!")
-    frequency = 1000  # Set Frequency To 2500 Hertz
-    duration = 250  # Set Duration To 250 ms == 0.25 second
-    winsound.Beep(frequency, duration)
+    print("start!!!")
+    winsound.PlaySound('game-start-6104.wav', winsound.SND_FILENAME)
+    
 
     with PositionHlCommander(
             scf1,
-            x=start_x, y=start_y, z=0.0,
+            x=start_x, y=start_y, z=start_z,
             default_velocity=init_Vel,
-            default_height=0.3,
+            default_height=h0,
             controller=PositionHlCommander.CONTROLLER_PID) as pc:
 
-        t_take_off = time.time() - t_init
-        print("start taking off at ", t_take_off)   
-    
-        ## Go up: h0 meter (at the eyes level)
-        pc.up(init_H)
-        time.sleep(init_H/init_Vel)
+        time.sleep(h0/init_Vel)
         print(pc.get_position())
-              
+
 
         ## Delay before flying out
         time.sleep(T_fly_out)
@@ -142,40 +152,32 @@ def drone_move_pc(scf1): # default take-off height = 0.3 m
         # duration = 250  # Set Duration To 250 ms == 0.25 second
         # winsound.Beep(frequency, duration)
 
-        # time.sleep(0.1)
+        ## Fly out as the order listed in "direct"
+        # for i in range(5):
+        #     if direct[i] == '1':
+        #         pc.forward(fly_out_x, velocity=V_fly_out)
+        #         time.sleep(2)
+        #         pc.go_to(start_x, start_y, z=h0, velocity=init_Vel)
 
-        # Timestamp before flying out
-        t_fo = time.time() - t_init
-        print("t fly out: ", t_fo)
-
-        ## Fly out
-        print("Start flying out")
-        pc.move_distance(fly_out_x, fly_out_y, fly_out_z, velocity=V_fly_out) 
-        # mc.up(fly_out_z, velocity=V_fly_out)
-
-        t_f1 = time.time() - t_init
-        print("t after fly out: ", t_f1)
-       
+        #     elif direct[i] == '1':
+        #         pc.right(fly_out_y, velocity=V_fly_out)
+        #         time.sleep(2)
+        #         pc.go_to(start_x, start_y, z=h0, velocity=init_Vel)
+                
+        #     elif direct[i] == '1':
+        #         pc.up(fly_out_z, velocity=V_fly_out)
+        #         time.sleep(2)
+        #         pc.go_to(start_x, start_y, z=h0, velocity=init_Vel)
         
-        ## Delay 0.5 sec before landing
-        time.sleep(0.5)
+        print("Task Begin!")
+        # frequency = 1000  # Set Frequency To 2500 Hertz
+        # duration = 250  # Set Duration To 250 ms == 0.25 second
+        # winsound.Beep(frequency, duration)
 
-'''
 
-
-def accelerate_test(scf):
-    with PositionHlCommander(
-        scf_1,
-        x=start_x, y=start_y, z=start_z,
-        default_velocity=take_off_vel,
-        default_height=de_h,
-        controller=PositionHlCommander.CONTROLLER_PID) as pc:
-
-        time.sleep(3)
-
-        pc.forward(1, velocity=task_vel)
+        pc.move_distance(fly_out_x, fly_out_y, fly_out_z, velocity=V_fly_out)
         # time.sleep((0.6)/take_off_vel)
-        # print(pc.get_position())
+        print(pc.get_position())
 
         # pc.right(1, velocity=task_vel)
         # # time.sleep((0.7)/take_off_vel)
@@ -184,16 +186,65 @@ def accelerate_test(scf):
         # pc.up(0.4, velocity=task_vel)
         # # time.sleep((0.4)/take_off_vel)
         # print(pc.get_position())
+        
+        ## Delay 0.5 sec before landing
+        time.sleep(1)
 
-        time.sleep(5)
+        ## set the event for turning off the sound feedback process
+        event2.set()
+
+
+def position_state_change(event1, event2):
+    print("position thread start")
+    global position_estimate_1, position_estimate_2
+    while not event2.is_set():
+        # if abs((position_estimate_2[2]+0.2)-position_estimate_1[2]) > d_th or abs((position_estimate_3[2]+0.2)-position_estimate_1[2]) > d_th:
+        #     # print("---Wrist Sensor is outbounded---")
+        #     event1.set()
+        distance = math.sqrt(
+        (position_estimate_1[0] - position_estimate_2[0]) ** 2 +
+        (position_estimate_1[1] - position_estimate_2[1]) ** 2 +
+        (position_estimate_1[2] - position_estimate_2[2]) ** 2)
+        
+        print(distance)
+
+        # If within the threshold, log it to the proximity CSV
+        if distance < d_th:
+            event1.set()
+            # winsound.PlaySound('Success.wav', winsound.SND_FILENAME)
+            print("Right!")
+            
+        else:
+            event1.clear()
+            # print("It's Pam!!!!!")
+            # event1.clear()
+
+def sound_feedback(event1, event2):
+    print("sound thread started")
+    while not event2.is_set():
+        if event1.is_set()==True:
+            print("Great!")
+            frequency = 2500  # Set Frequency To 2500 Hertz
+            duration = 500  # Set Duration To 250 ms == 0.25 second
+            winsound.Beep(frequency, duration)
+        else:
+            # print("Nothing")
+            pass
+            
+        time.sleep(0.1)
+
 
 if __name__ == '__main__':
+
+    # # initializing the queue and event object
+    e1 = threading.Event()
+    e2 = threading.Event()
 
     # # initializing Crazyflie 
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
     with SyncCrazyflie(uri_2, cf=Crazyflie(rw_cache='./cache')) as scf_2:
-        logconf_2 = LogConfig(name='Position', period_in_ms=500)
+        logconf_2 = LogConfig(name='Position', period_in_ms=10) # sampling at 100Hz
         logconf_2.add_variable('kalman.stateX', 'float')
         logconf_2.add_variable('kalman.stateY', 'float')
         logconf_2.add_variable('kalman.stateZ', 'float')            
@@ -201,7 +252,7 @@ if __name__ == '__main__':
         logconf_2.data_received_cb.add_callback( lambda timestamp, data, logconf_2: log_pos_callback_2(uri_2, timestamp, data, logconf_2) )
 
         with SyncCrazyflie(uri_1, cf=Crazyflie(rw_cache='./cache')) as scf_1:
-            logconf_1 = LogConfig(name='Position', period_in_ms=500)
+            logconf_1 = LogConfig(name='Position', period_in_ms=10) # sampling at 100Hz
             logconf_1.add_variable('kalman.stateX', 'float')
             logconf_1.add_variable('kalman.stateY', 'float')
             logconf_1.add_variable('kalman.stateZ', 'float')        
@@ -213,9 +264,20 @@ if __name__ == '__main__':
 
             time.sleep(3)
 
+            # Declaring feedback threads for movement no.3
+            pos_state_thread = threading.Thread(name='Position-State-Change-Thread', target=position_state_change, args=(e1, e2))
+            sound_thread = threading.Thread(name='Sound-Feedback-Thread', target=sound_feedback, args=(e1, e2))
+        
+            # Starting threads for movement no.3
+            sound_thread.start()
+            pos_state_thread.start()
+
             # Perform the catching task
-            # drone_move_pc(scf_1)
-            accelerate_test(scf_1)
+            drone_move_pc(scf_1, e2)
+
+            # Threads join  
+            sound_thread.join()
+            pos_state_thread.join()
 
             time.sleep(3)
 
