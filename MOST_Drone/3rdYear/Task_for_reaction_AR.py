@@ -260,7 +260,7 @@ def sound_feedback(event1, event2):
             print("Great!")
             frequency = 2500  # Set Frequency To 2500 Hertz
             duration = 500  # Set Duration To 250 ms == 0.25 second
-            winsound.Beep(frequency, duration)
+            winsound.Beep(frequency, duration)     # comment this line for AR condition ///////////////////////////
         else:
             # print("Nothing")
             pass
