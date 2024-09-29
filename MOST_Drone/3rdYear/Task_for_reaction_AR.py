@@ -13,35 +13,82 @@ from threading import Lock
 
 
 # URI to the Crazyflie to connect to
-uri_1 = 'radio://0/80/2M/E7E7E7E701' # Drone's uri
+uri_1 = 'radio://0/80/2M/E7E7E7E708' # Drone's uri
 uri_2 = 'radio://0/80/2M/E7E7E7E7E8' # Tag's uri
 
 
-start_x = float(0.0)  # initial pos_X of the drone; unit: m
-start_y = float(0.0)  # initial pos_y of the drone; unit: m
-start_z = float(0.0)  # initial pos_z of the drone; unit: m
-
 init_Vel = float(0.5)   # initial velocity
 h0 = 1.4                # Eyes level height (unit: meter)
-T_fly_out = float(3)    # Fly out time (unit: sec)
-V_fly_out = float(1)    # Fly out velocity (unit: m/s)
+# T_fly_out = float(3)    # Fly out time (unit: sec)
+V_fly_out = float(0.8)    # Fly out velocity (unit: m/s)
+
+fw = float(0.5)  # Fly out in x-axis (unit: m); 
+bw = float(-0.5)
+rw = float(-0.5) # Fly out in y-axis (unit: m); 
+lw = float(0.5)  
+uw = float(0.4)  # Fly out in z-axis (unit: m); 
+dw = float(-0.4) 
 
 
-fw = float(0.8)  # Fly out position in x-axis (unit: m); 0.8
-rw = float(-0.8) # Fly out position in y-axis (unit: m); -0.8
-uw = float(0.4)  # Fly out position in z-axis (unit: m); 0.4
+xi = 0.5
+yi = 0
+zi = 0
 
-# fly_out_1 = [fw, 0, 0]
-# fly_out_2 = [0, rw, 0]
+start_1 = [xi, yi-0.3, zi+h0] 
+fly_out_1 = [fw, 0, 0]
+start_2 = [xi, yi, zi+h0+0.2]
+fly_out_2 = [0, lw, 0]
+start_3 = [xi, yi, zi+h0]
+fly_out_3 = [0, 0, uw]
+start_4 = [xi+0.2, yi-0.1, zi+h0-0.2] 
+fly_out_4 = [0, rw, 0]
+
+
+# start_2 = [0, 0, h0]
+# fly_out_2 = [fw, 0, 0]
+# start_3 = [0, 0.2, h0-0.1]
 # fly_out_3 = [0, 0, uw]
+
+# start_1 = [0.4, 0.1, h0] 
+# fly_out_1 = [0, 0, uw]
+# start_2 = [0.2, -0.3, h0+0.3]
+# fly_out_2 = [0, lw, 0]
+# start_3 = [0, 0.4, h0]
+# fly_out_3 = [fw, 0, 0]
+
+# start_1 = [0.2, 0, h0] 
+# fly_out_1 = [0, rw, 0]
+# start_2 = [0, 0, h0-0.2]
+# fly_out_2 = [0, 0, uw]
+# start_3 = [0, 0.3, h0+0.1]
+# fly_out_3 = [fw, 0, 0]
+
+# start_1 = [0, 0, h0] 
+# fly_out_1 = [fw, 0, 0]
+# start_2 = [0, 0.3, h0]
+# fly_out_2 = [0, 0, uw]
+# start_3 = [0.1, 0, h0+0.2]
+# fly_out_3 = [0, rw, 0]
+
+# start_1 = [0, 0.2, h0] 
+# fly_out_1 = [0, 0, uw]
+# start_2 = [0.1, 0, h0]
+# fly_out_2 = [fw, 0, 0]
+# start_3 = [0, 0.1, h0+0.2]
+# fly_out_3 = [0, lw, 0]
+
+'''
+fly_out_1 = [fw, 0, 0]
+fly_out_2 = [0, rw, 0]
+fly_out_3 = [0, 0, uw]
 
 # fly_out_1 = [0, rw, 0]
 # fly_out_2 = [fw, 0, 0]
 # fly_out_3 = [0, 0, uw]
 
-fly_out_1 = [0, 0, uw]
-fly_out_2 = [0, rw, 0]
-fly_out_3 = [fw, 0, 0]
+# fly_out_1 = [0, 0, uw]
+# fly_out_2 = [0, rw, 0]
+# fly_out_3 = [fw, 0, 0]
 
 # fly_out_1 = [0, rw, 0]
 # fly_out_2 = [0, 0, uw]
@@ -54,26 +101,13 @@ fly_out_3 = [fw, 0, 0]
 # fly_out_1 = [0, 0, uw]
 # fly_out_2 = [fw, 0, 0]
 # fly_out_3 = [0, rw, 0]
-
-
-position_estimate_1 = [0, 0, 0]  # Drone's pos
-position_estimate_2 = [0, 0, 0]  # LS's pos
-
-d_th = float(0.3)   # threshold
-
-# # 1: FW; 2: RW; 3: UW
-# direct = ['0', '0', '0', '0', '0']
-# dir1 = ['1', '2','1', '3', '2']
-# dir2 = [3,1,1,2,3]
-# dir3 = [2,3,1,3,2]
-
-# direct = dir1
+'''
 
 # CSV file setup
-filename = "S1_t3.csv"
+filename = "S2_t3.csv"
 fields = ['timestamp', 'pos1_x', 'pos1_y', 'pos1_z', 'pos2_x', 'pos2_y', 'pos2_z', 'distance']
 
-proximity_filename = "proximity_log_s1_t3.csv"
+proximity_filename = "proximity_log_s2_t3.csv"
 proximity_fields = ['timestamp', 'distance']
 
 lock = Lock()
@@ -92,6 +126,12 @@ try:
         writer.writerow(proximity_fields)
 except FileExistsError:
     pass
+
+
+position_estimate_1 = [0, 0, 0]  # Drone's pos
+position_estimate_2 = [0, 0, 0]  # LS's pos
+
+d_th = float(0.35)   # threshold
 
 # # Positioning Callback Section
 def log_pos_callback_1(uri_1, timestamp, data, logconf_1):
@@ -147,63 +187,125 @@ def check_proximity(timestamp):
 
 def drone_move_pc(scf1, event2): # default take-off height = 0.3 m
 
-    # BEEP before start
+    # # BEEP before start
     print("start!!!")
-    winsound.PlaySound('game-start-6104.wav', winsound.SND_FILENAME)
+    # winsound.PlaySound('game-start-6104.wav', winsound.SND_FILENAME)
     
-
     with PositionHlCommander(
             scf1,
-            x=start_x, y=start_y, z=start_z,
+            x=xi, y=yi, z=zi,
             default_velocity=init_Vel,
             default_height=h0,
             controller=PositionHlCommander.CONTROLLER_PID) as pc:
 
-        time.sleep(h0/init_Vel)
-        print(pc.get_position())
+        # time.sleep(h0/init_Vel)
+        # print(pc.get_position())
 
         # # # 1st round
 
-        ## Delay before flying out
-        time.sleep(T_fly_out)
-        
-        print("1st Trial")
+        pc.go_to(start_1[0], start_1[1], start_1[2], velocity=init_Vel)
+        print(pc.get_position())
+        time.sleep(2)
+
+        print("Open your eyes - 1st Trial")
         # frequency = 1000  # Set Frequency To 2500 Hertz
         # duration = 250  # Set Duration To 250 ms == 0.25 second
-        # winsound.Beep(frequency, duration) 
+        # winsound.Beep(frequency, duration)
+        winsound.PlaySound('eyeopen.wav', winsound.SND_FILENAME)
 
+        # time.sleep(0.1)  # include it or not ??? 
+        
+        # immediately flying out
         pc.move_distance(fly_out_1[0], fly_out_1[1], fly_out_1[2], velocity=V_fly_out)
         print(pc.get_position())
+
         time.sleep(1)
-
-        # return to starting position
-        pc.go_to(start_x, start_y, h0, velocity=init_Vel)
-        print(pc.get_position())
-        time.sleep(1)
-
-
-        # # # 2nd round
-
-        ## Delay before flying out
-        time.sleep(T_fly_out)
         
-        print("2nd Trial")
+        print("Close your eyes")
+        winsound.PlaySound('eyeclose.wav', winsound.SND_FILENAME)
+        # time.sleep(1)
+
+        # # return to starting position
+        # pc.go_to(start_x, start_y, h0, velocity=init_Vel)
+        # print(pc.get_position())
+        # time.sleep(1)
+        
+        
+        # # # 2nd round
+        
+        pc.go_to(start_2[0], start_2[1], start_2[2], velocity=init_Vel)
+        print(pc.get_position())
+        time.sleep(2)
+
+        print("Open your eyes - 2nd Trial")
         # frequency = 1000  # Set Frequency To 2500 Hertz
         # duration = 250  # Set Duration To 250 ms == 0.25 second
-        # winsound.Beep(frequency, duration) 
+        # winsound.Beep(frequency, duration)
+        winsound.PlaySound('eyeopen.wav', winsound.SND_FILENAME)
 
+        # time.sleep(0.1)  # include it or not ??? 
+        
+        # immediately flying out
         pc.move_distance(fly_out_2[0], fly_out_2[1], fly_out_2[2], velocity=V_fly_out)
         print(pc.get_position())
+
         time.sleep(1)
 
-        # return to starting position
-        pc.go_to(start_x, start_y, h0, velocity=init_Vel)
-        print(pc.get_position())
-        time.sleep(1)
+        print("Close your eyes")
+        winsound.PlaySound('eyeclose.wav', winsound.SND_FILENAME)
+        # time.sleep(2)
 
+        # # return to starting position
+        # pc.go_to(start_x, start_y, h0, velocity=init_Vel)
+        # print(pc.get_position())
+        
         
         # # # 3rd round
 
+        pc.go_to(start_3[0], start_3[1], start_3[2], velocity=init_Vel)
+        print(pc.get_position())
+        time.sleep(2)
+
+        print("Open your eyes - 3rd Trial")
+        # frequency = 1000  # Set Frequency To 2500 Hertz
+        # duration = 250  # Set Duration To 250 ms == 0.25 second
+        # winsound.Beep(frequency, duration)
+        winsound.PlaySound('eyeopen.wav', winsound.SND_FILENAME)
+
+        # time.sleep(0.1)  # include it or not ??? 
+        
+        # immediately flying out
+        pc.move_distance(fly_out_3[0], fly_out_3[1], fly_out_3[2], velocity=V_fly_out)
+        print(pc.get_position())
+
+        time.sleep(1)
+
+        print("Close your eyes")
+        winsound.PlaySound('eyeclose.wav', winsound.SND_FILENAME)
+        # time.sleep(2)
+
+
+        # # # 4th round
+
+        pc.go_to(start_4[0], start_4[1], start_4[2], velocity=init_Vel)
+        print(pc.get_position())
+        time.sleep(2)
+
+        print("Open your eyes - 4th Trial")
+        # frequency = 1000  # Set Frequency To 2500 Hertz
+        # duration = 250  # Set Duration To 250 ms == 0.25 second
+        # winsound.Beep(frequency, duration)
+        winsound.PlaySound('eyeopen.wav', winsound.SND_FILENAME)
+
+        # time.sleep(0.1)  # include it or not ??? 
+        
+        # immediately flying out
+        pc.move_distance(fly_out_4[0], fly_out_4[1], fly_out_4[2], velocity=V_fly_out)
+        print(pc.get_position())
+
+        time.sleep(1)
+
+        '''
         ## Delay before flying out
         time.sleep(T_fly_out)
         
@@ -220,11 +322,15 @@ def drone_move_pc(scf1, event2): # default take-off height = 0.3 m
         pc.go_to(start_x, start_y, h0, velocity=init_Vel)
         print(pc.get_position())
         time.sleep(1)
+        '''
 
-        ## Delay 1 sec before landing
+        # return to starting position
+        # pc.go_to(xi, yi, zi+h0, velocity=init_Vel)
+
+        # Delay 1 sec before landing
         time.sleep(1)
 
-        ## set the event for turning off the sound feedback process
+        # set the event for turning off the sound feedback process
         event2.set()
 
 
@@ -258,9 +364,10 @@ def sound_feedback(event1, event2):
     while not event2.is_set():
         if event1.is_set()==True:
             print("Great!")
-            frequency = 2500  # Set Frequency To 2500 Hertz
-            duration = 500  # Set Duration To 250 ms == 0.25 second
-            winsound.Beep(frequency, duration)     # comment this line for AR condition ///////////////////////////
+            # frequency = 2500  # Set Frequency To 2500 Hertz
+            # duration = 500  # Set Duration To 250 ms == 0.25 second
+            # winsound.Beep(frequency, duration)     # comment this line for AR condition ///////////////////////////
+            winsound.PlaySound('_short-success.wav', winsound.SND_FILENAME)
         else:
             # print("Nothing")
             pass
