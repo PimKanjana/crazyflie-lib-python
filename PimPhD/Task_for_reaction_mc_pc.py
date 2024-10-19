@@ -12,18 +12,18 @@ from cflib.positioning.position_hl_commander import PositionHlCommander
 
 
 # URI to the Crazyflie to connect to
-uri = 'radio://0/80/2M/E7E7E7E703'
+uri = 'radio://0/80/2M/E7E7E7E708'
 
-take_off_vel = 1      # take off velocity; unit: m/s
-task_vel = 1.2
-offset = 0.15         # drone height offset; unit: m
-tar_h = 1.5             # target height
+take_off_vel = 0.5      # take off velocity; unit: m/s
+task_vel = 0.8
+offset = 0.18         # drone height offset; unit: m
+tar_h = 1.3             # target height
 ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
 de_h = tar_h - offset + ball_length # default height; unit: m
 
 start_x = float(0.0)  # initial pos_X of the drone; unit: m
 start_y = float(0.0)  # initial pos_y of the drone; unit: m
-start_z = float(offset)  # initial pos_z of the drone; unit: m
+start_z = float(0.0)  # initial pos_z of the drone; unit: m
 
 '''
 f = open("conditions.txt", "rt")
@@ -42,8 +42,8 @@ dist = math.sqrt(fly_out_x*fly_out_x + fly_out_y*fly_out_y + fly_out_z*fly_out_z
 
 position_estimate_1 = [0, 0, 0]  # Drone's pos
 
-# CSV file setup
-filename = "wt_ball_h15_v12_uw04_3.csv"
+# CSV file setup (s1_u1.csv)
+filename = "s1_rw_5.csv"  #p2 in motion
 # filename = "test.csv"
 fields = ['timestamp', 'pos_x', 'pos_y', 'pos_z']
 
@@ -62,7 +62,7 @@ def log_pos_callback_1(uri, timestamp, data, logconf_1):
     position_estimate_1[0] = data['kalman.stateX']
     position_estimate_1[1] = data['kalman.stateY']
     position_estimate_1[2] = data['kalman.stateZ']
-    print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]))
+    # print("{}: {} is at pos: ({}, {}, {})".format(timestamp, uri, position_estimate_1[0], position_estimate_1[1], position_estimate_1[2]))
 
     # Append to CSV file if both estimates are available
     with open(filename, 'a', newline='') as csvfile:
@@ -175,19 +175,19 @@ def accelerate_test(scf):
 
         time.sleep(3)
 
-        # pc.forward(1, velocity=task_vel)
+        # pc.forward(0.8, velocity=task_vel)
         # time.sleep((0.6)/take_off_vel)
         # print(pc.get_position())
 
-        # pc.right(1, velocity=task_vel)
+        pc.right(0.8, velocity=task_vel)
         # # time.sleep((0.7)/take_off_vel)
         # print(pc.get_position())
 
-        pc.up(0.4, velocity=task_vel)
+        # pc.up(0.4, velocity=task_vel)
         # # time.sleep((0.4)/take_off_vel)
         # print(pc.get_position())
 
-        time.sleep(3)
+        time.sleep(1)
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
     with SyncCrazyflie(uri, cf=Crazyflie(rw_cache='./cache')) as scf:
-        logconf_1 = LogConfig(name='Position', period_in_ms=500)
+        logconf_1 = LogConfig(name='Position', period_in_ms=10)
         logconf_1.add_variable('kalman.stateX', 'float')
         logconf_1.add_variable('kalman.stateY', 'float')
         logconf_1.add_variable('kalman.stateZ', 'float')        

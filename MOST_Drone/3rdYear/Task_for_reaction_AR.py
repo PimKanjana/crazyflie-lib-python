@@ -13,69 +13,84 @@ from threading import Lock
 
 
 # URI to the Crazyflie to connect to
-uri_1 = 'radio://0/80/2M/E7E7E7E708' # Drone's uri
-uri_2 = 'radio://0/80/2M/E7E7E7E7E8' # Tag's uri
+uri_1 = 'radio://0/80/2M/E7E7E7E710' # Drone's uri
+uri_2 = 'radio://0/80/2M/E7E7E7E7E9' # Tag's uri
 
 
 init_Vel = float(0.5)   # initial velocity
-h0 = 1.4                # Eyes level height (unit: meter)
+h0 = 1.3                # Eyes level height (unit: meter)
 # T_fly_out = float(3)    # Fly out time (unit: sec)
 V_fly_out = float(0.8)    # Fly out velocity (unit: m/s)
 
-fw = float(0.5)  # Fly out in x-axis (unit: m); 
-bw = float(-0.5)
-rw = float(-0.5) # Fly out in y-axis (unit: m); 
-lw = float(0.5)  
-uw = float(0.4)  # Fly out in z-axis (unit: m); 
-dw = float(-0.4) 
+fw = float(0.4)  # Fly out in x-axis (unit: m); 
+bw = float(-0.4)
+rw = float(-0.4) # Fly out in y-axis (unit: m); 
+lw = float(0.4)  
+uw = float(0.3)  # Fly out in z-axis (unit: m); 
+dw = float(-0.3) 
 
 
-xi = 0.5
+xi = 0.7   # put the drone at 0.5 m away from the subject
 yi = 0
 zi = 0
 
-start_1 = [xi, yi-0.3, zi+h0] 
-fly_out_1 = [fw, 0, 0]
-start_2 = [xi, yi, zi+h0+0.2]
-fly_out_2 = [0, lw, 0]
-start_3 = [xi, yi, zi+h0]
-fly_out_3 = [0, 0, uw]
-start_4 = [xi+0.2, yi-0.1, zi+h0-0.2] 
+# Drone: 1-2-3-4-5
+# AR: 2-4-1-5-3
+
+# # task 1
+# start_1 = [xi, yi-0.2, zi+h0] 
+# fly_out_1 = [fw, 0, 0]
+# start_2 = [xi, yi, zi+h0-0.1]
+# fly_out_2 = [0, lw, 0]
+# start_3 = [xi, yi, zi+h0]
+# fly_out_3 = [0, 0, uw]
+# start_4 = [xi+0.2, yi-0.1, zi+h0] 
+# fly_out_4 = [0, rw, 0]
+
+
+# # task 2
+# start_1 = [xi, yi, zi+h0] 
+# fly_out_1 = [fw, 0, 0]
+# start_2 = [xi, yi+0.2, zi+h0-0.1]    
+# fly_out_2 = [0, 0, uw]
+# start_3 = [xi+0.1, yi, zi+h0]    
+# fly_out_3 = [0, rw, 0]
+# start_4 = [xi, yi+0.1, zi+h0+0.1] 
+# fly_out_4 = [0, lw, 0]
+
+
+# # task 3
+# start_1 = [xi, yi+0.2, zi+h0]  
+# fly_out_1 = [fw, 0, 0]   
+# start_2 = [xi+0.1, yi-0.1, zi+h0]   
+# fly_out_2 = [0, rw, 0]
+# start_3 = [xi, yi, zi+h0+0.1]
+# fly_out_3 = [0, lw, 0]
+# start_4 = [xi, yi+0.2, zi+h0] 
+# fly_out_4 = [fw, 0, 0]
+
+
+# # task 4
+# start_1 = [xi, yi, zi+h0-0.2] 
+# fly_out_1 = [0, 0, uw]
+# start_2 = [xi, yi+0.2, zi+h0+0.1]    
+# fly_out_2 = [fw, 0, 0]
+# start_3 = [xi, yi-0.1, zi+h0]
+# fly_out_3 = [0, 0, uw]
+# start_4 = [xi+0.1, yi, zi+h0-0.1] 
+# fly_out_4 = [0, rw, 0]
+
+
+# task 5
+start_1 = [xi, yi+0.2, zi+h0] 
+fly_out_1 = [0, 0, uw]
+start_2 = [xi+0.1, yi, zi+h0]
+fly_out_2 = [fw, 0, 0]
+start_3 = [xi, yi+0.1, zi+h0+0.1]
+fly_out_3 = [0, lw, 0]
+start_4 = [xi, yi, zi+h0] 
 fly_out_4 = [0, rw, 0]
 
-
-# start_2 = [0, 0, h0]
-# fly_out_2 = [fw, 0, 0]
-# start_3 = [0, 0.2, h0-0.1]
-# fly_out_3 = [0, 0, uw]
-
-# start_1 = [0.4, 0.1, h0] 
-# fly_out_1 = [0, 0, uw]
-# start_2 = [0.2, -0.3, h0+0.3]
-# fly_out_2 = [0, lw, 0]
-# start_3 = [0, 0.4, h0]
-# fly_out_3 = [fw, 0, 0]
-
-# start_1 = [0.2, 0, h0] 
-# fly_out_1 = [0, rw, 0]
-# start_2 = [0, 0, h0-0.2]
-# fly_out_2 = [0, 0, uw]
-# start_3 = [0, 0.3, h0+0.1]
-# fly_out_3 = [fw, 0, 0]
-
-# start_1 = [0, 0, h0] 
-# fly_out_1 = [fw, 0, 0]
-# start_2 = [0, 0.3, h0]
-# fly_out_2 = [0, 0, uw]
-# start_3 = [0.1, 0, h0+0.2]
-# fly_out_3 = [0, rw, 0]
-
-# start_1 = [0, 0.2, h0] 
-# fly_out_1 = [0, 0, uw]
-# start_2 = [0.1, 0, h0]
-# fly_out_2 = [fw, 0, 0]
-# start_3 = [0, 0.1, h0+0.2]
-# fly_out_3 = [0, lw, 0]
 
 '''
 fly_out_1 = [fw, 0, 0]
@@ -103,11 +118,14 @@ fly_out_3 = [0, 0, uw]
 # fly_out_3 = [0, rw, 0]
 '''
 
-# CSV file setup
-filename = "S2_t3.csv"
-fields = ['timestamp', 'pos1_x', 'pos1_y', 'pos1_z', 'pos2_x', 'pos2_y', 'pos2_z', 'distance']
+# CSV file setup  (change the file name according to the subject's no. and task no.)
+filename = "s7_t5.csv"
+# filename = "test.csv"
+proximity_filename = "proximity_log_s7_t5.csv"
+# proximity_filename = "test.csv"
 
-proximity_filename = "proximity_log_s2_t3.csv"
+
+fields = ['timestamp', 'pos1_x', 'pos1_y', 'pos1_z', 'pos2_x', 'pos2_y', 'pos2_z', 'distance']
 proximity_fields = ['timestamp', 'distance']
 
 lock = Lock()
@@ -131,7 +149,7 @@ except FileExistsError:
 position_estimate_1 = [0, 0, 0]  # Drone's pos
 position_estimate_2 = [0, 0, 0]  # LS's pos
 
-d_th = float(0.35)   # threshold
+d_th = float(0.65)   # threshold
 
 # # Positioning Callback Section
 def log_pos_callback_1(uri_1, timestamp, data, logconf_1):

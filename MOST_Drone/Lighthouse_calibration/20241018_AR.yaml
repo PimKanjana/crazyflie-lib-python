@@ -1,0 +1,73 @@
+calibs:
+  0:
+    sweeps:
+    - curve: -0.021759033203125
+      gibmag: -0.002346038818359375
+      gibphase: 1.572265625
+      ogeemag: -0.123779296875
+      ogeephase: 1.7724609375
+      phase: 0.0
+      tilt: -0.0411376953125
+    - curve: 0.52587890625
+      gibmag: -0.003482818603515625
+      gibphase: 1.5234375
+      ogeemag: -0.0191650390625
+      ogeephase: 0.81982421875
+      phase: -0.0036563873291015625
+      tilt: 0.046783447265625
+    uid: 4232700254
+  1:
+    sweeps:
+    - curve: 0.037841796875
+      gibmag: -0.004993438720703125
+      gibphase: 2.900390625
+      ogeemag: -0.29443359375
+      ogeephase: 0.6484375
+      phase: 0.0
+      tilt: -0.045074462890625
+    - curve: 0.7333984375
+      gibmag: 0.00202178955078125
+      gibphase: 0.7685546875
+      ogeemag: -0.304443359375
+      ogeephase: 1.2265625
+      phase: -0.0012655258178710938
+      tilt: 0.045013427734375
+    uid: 787768541
+  2:
+    sweeps:
+    - curve: -0.03106689453125
+      gibmag: -0.00392913818359375
+      gibphase: 2.44140625
+      ogeemag: -0.135009765625
+      ogeephase: 0.70166015625
+      phase: 0.0
+      tilt: -0.047393798828125
+    - curve: 0.474853515625
+      gibmag: -0.0026149749755859375
+      gibphase: 2.4296875
+      ogeemag: -0.1112060546875
+      ogeephase: 1.2001953125
+      phase: -0.0023651123046875
+      tilt: 0.045928955078125
+    uid: 285048232
+  3:
+    sweeps:
+    - curve: -0.1651611328125
+      gibmag: -0.0021190643310546875
+      gibphase: 2.265625
+      ogeemag: -0.1796875
+      ogeephase: 1.197265625
+      phase: 0.0
+      tilt: -0.049835205078125
+    - curve: 0.275634765625
+      gibmag: -0.0009431838989257812
+      gibphase: 2.423828125
+      ogeemag: -0.250244140625
+      ogeephase: 1.3037109375
+      phase: -0.003971099853515625
+      tilt: 0.041717529296875
+    uid: 1109741170
+geos: {}
+systemType: 2
+type: lighthouse_system_configuration
+version: '1'
