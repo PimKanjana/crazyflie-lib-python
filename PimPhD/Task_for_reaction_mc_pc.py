@@ -12,17 +12,17 @@ from cflib.positioning.position_hl_commander import PositionHlCommander
 
 
 # URI to the Crazyflie to connect to
-uri = 'radio://0/80/2M/E7E7E7E706'
+uri = 'radio://0/80/2M/E7E7E7E703'
 
 take_off_vel = 0.8      # take off velocity; unit: m/s
 task_vel = 0.8
 offset = 0.18         # drone height offset; unit: m
-tar_h = 1.36             # target height
+tar_h = 1.30            # target height
 ball_length = 0.1     # hanging part lenght from the LH deck; unit: m
 de_h = tar_h - offset + ball_length # default height; unit: m
 
-start_x = float(0.02)  # initial pos_X of the drone; unit: m
-start_y = float(-0.01)  # initial pos_y of the drone; unit: m
+start_x = float(0.0)  # initial pos_X of the drone; unit: m
+start_y = float(0.0)  # initial pos_y of the drone; unit: m
 start_z = float(0.0)  # initial pos_z of the drone; unit: m
 
 '''
@@ -43,8 +43,8 @@ dist = math.sqrt(fly_out_x*fly_out_x + fly_out_y*fly_out_y + fly_out_z*fly_out_z
 position_estimate_1 = [0, 0, 0]  # Drone's pos
 
 # CSV file setup (s1_u1.csv)
-filename = "s5_rw_5.csv"  #p2 in motion
-# filename = "test.csv"
+# filename = "s38_fw_1.csv" 
+filename = "test.csv"
 fields = ['timestamp', 'pos_x', 'pos_y', 'pos_z']
 
 # Write header if the file does not exist
